@@ -363,7 +363,7 @@ License Agreement
 
 ```kotlin
 dependencies {
-    implementation("io.github.kotlinmania:regex-lite-kotlin:0.1.0-SNAPSHOT")
+    implementation("io.github.kotlinmania:regex-lite-kotlin:0.1.0")
 }
 ```
 
