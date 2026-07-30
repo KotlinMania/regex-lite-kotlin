@@ -12,7 +12,9 @@ package io.github.kotlinmania.regexlite
  * This error type provides no introspection capabilities. The only thing you
  * can do with it is convert it to a string as a human readable error message.
  */
-class Error internal constructor(private val msg: String) {
+class Error internal constructor(
+    private val msg: String,
+) {
     override fun toString(): String = msg
 
     override fun equals(other: Any?): Boolean =

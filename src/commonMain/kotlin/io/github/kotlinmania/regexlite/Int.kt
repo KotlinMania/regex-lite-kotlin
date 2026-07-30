@@ -22,7 +22,9 @@ internal fun UInt.asUsize(): Int {
  * lengths are guaranteed to never reach `Int.MAX_VALUE`, the platform can
  * use `Int.MAX_VALUE` as a sentinel to indicate that no match was found.
  */
-internal class NonMaxUsize private constructor(private val value: Int) {
+internal class NonMaxUsize private constructor(
+    private val value: Int,
+) {
     /**
      * Return the underlying `Int` value. The returned value is guaranteed
      * to not equal `Int.MAX_VALUE`.
