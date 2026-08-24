@@ -1,9 +1,9 @@
-// port-lint: source src/int.rs
+// port-lint: source int.rs
 package io.github.kotlinmania.regexlite
 
 /**
  * An extension that adds a routine for converting a `UInt` value to a
- * `usize`-shaped `Int`.
+ * size-typed `Int`.
  */
 internal fun UInt.asUsize(): Int {
     // OK because we require 32 or 64 bit targets. Therefore, every UInt

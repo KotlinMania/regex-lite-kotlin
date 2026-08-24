@@ -1,4 +1,4 @@
-// port-lint: source src/utf8.rs
+// port-lint: source utf8.rs
 package io.github.kotlinmania.regexlite
 
 /**

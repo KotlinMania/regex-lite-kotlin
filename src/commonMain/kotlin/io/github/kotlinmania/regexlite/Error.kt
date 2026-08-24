@@ -1,4 +1,4 @@
-// port-lint: source src/error.rs
+// port-lint: source error.rs
 package io.github.kotlinmania.regexlite
 
 /**
@@ -13,8 +13,8 @@ package io.github.kotlinmania.regexlite
  * can do with it is convert it to a string as a human readable error message.
  */
 class Error internal constructor(
-    private val msg: String,
-) {
+    val msg: String,
+) : Exception(msg) {
     override fun toString(): String = msg
 
     override fun equals(other: Any?): Boolean =
