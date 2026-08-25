@@ -885,8 +885,7 @@ val publishToCentralPortal by tasks.registering {
 tasks.register("test") {
     group = "verification"
     description = "Runs the commonTest-backed KMP suite, Android host tests, and Swift Export smoke test."
-    dependsOn("allTests")
-    dependsOn("testAndroidHostTest")
+    dependsOn("hostTests")
     dependsOn("swiftExportSmokeTest")
 }
 
@@ -915,11 +914,7 @@ tasks.register("hostTests") {
 // Patch generated SPM Package.swift to include minimum macOS platform for Swift Concurrency
 tasks.matching { it.name.contains("GenerateSPMPackage") }.configureEach {
     doLast {
-        val spmDir =
-            layout.buildDirectory
-                .dir("SPMPackage")
-                .orNull
-                ?.asFile
+        val spmDir = layout.buildDirectory.dir("SPMPackage").orNull?.asFile
         if (spmDir != null && spmDir.exists()) {
             spmDir.walkTopDown().filter { it.name == "Package.swift" }.forEach { file ->
                 val text = file.readText()
@@ -948,18 +943,23 @@ tasks.register("swiftExportSmokeTest") {
 
     doLast {
         val execOperations = serviceOf<ExecOperations>()
-        val swiftBuildDir =
+        val swiftBuildFile =
             layout.buildDirectory
                 .dir("swift-test")
                 .get()
                 .asFile
-                .absolutePath
+        if (swiftBuildFile.exists()) {
+            swiftBuildFile.deleteRecursively()
+        }
+        swiftBuildFile.mkdirs()
+        val swiftBuildDir = swiftBuildFile.absolutePath
         execOperations
             .exec {
                 workingDir = projectDir
                 commandLine(
                     "./gradlew",
                     "embedSwiftExportForXcode",
+                    "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g",
                     "--no-configuration-cache",
                     "--no-daemon",
                     "--console=plain",
