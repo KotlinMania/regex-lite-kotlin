@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import Testing
 import RegexLite
 
@@ -8,3 +9,13 @@ struct RegexLiteExportTests {
         #expect(Bool(true), "RegexLite swift module imported cleanly")
     }
 }
+#elseif canImport(XCTest)
+import XCTest
+import RegexLite
+
+final class RegexLiteExportTests: XCTestCase {
+    func testSwiftModuleLoads() throws {
+        XCTAssertTrue(true, "RegexLite swift module imported cleanly")
+    }
+}
+#endif
