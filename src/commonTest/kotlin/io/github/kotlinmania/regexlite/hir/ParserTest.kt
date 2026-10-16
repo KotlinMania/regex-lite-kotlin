@@ -14,6 +14,8 @@ class ParserTest {
     private fun classNode(vararg ranges: Pair<Char, Char>): Hir =
         Hir.classNode(Class(ranges.map { ClassRange(it.first, it.second) }.toMutableList()))
 
+    private fun `class`(vararg ranges: Pair<Char, Char>): Hir = classNode(*ranges)
+
     private fun singles(vararg chars: Char): Hir =
         Hir.classNode(Class(chars.map { ClassRange(it, it) }.toMutableList()))
 
@@ -30,7 +32,7 @@ class ParserTest {
     fun okLiteral() {
         assertEquals(Hir.char('a'), p("a"))
         assertEquals(Hir.concat(mutableListOf(Hir.char('a'), Hir.char('b'))), p("ab"))
-        assertEquals(Hir.char('\uD83D'), p("\uD83D"))
+        assertEquals(Hir.concat(mutableListOf(Hir.char('\uD83D'), Hir.char('\uDCA9'))), p("💩"))
     }
 
     @Test
@@ -222,6 +224,56 @@ class ParserTest {
     }
 
     @Test
+    fun okGroupUnnamed() {
+        assertEquals(cap(1u, Hir.char('a')), p("(a)"))
+        assertEquals(
+            cap(1u, Hir.concat(mutableListOf(Hir.char('a'), Hir.char('b')))),
+            p("(ab)"),
+        )
+    }
+
+    @Test
+    fun okGroupNamed() {
+        assertEquals(namedCap(1u, "foo", Hir.char('a')), p("(?P<foo>a)"))
+        assertEquals(namedCap(1u, "foo", Hir.char('a')), p("(?<foo>a)"))
+
+        assertEquals(
+            namedCap(
+                1u,
+                "foo",
+                Hir.concat(mutableListOf(Hir.char('a'), Hir.char('b'))),
+            ),
+            p("(?P<foo>ab)"),
+        )
+        assertEquals(
+            namedCap(
+                1u,
+                "foo",
+                Hir.concat(mutableListOf(Hir.char('a'), Hir.char('b'))),
+            ),
+            p("(?<foo>ab)"),
+        )
+
+        assertEquals(namedCap(1u, "a", Hir.char('z')), p("(?<a>z)"))
+        assertEquals(namedCap(1u, "a", Hir.char('z')), p("(?P<a>z)"))
+
+        assertEquals(namedCap(1u, "a_1", Hir.char('z')), p("(?<a_1>z)"))
+        assertEquals(namedCap(1u, "a_1", Hir.char('z')), p("(?P<a_1>z)"))
+
+        assertEquals(namedCap(1u, "a.1", Hir.char('z')), p("(?<a.1>z)"))
+        assertEquals(namedCap(1u, "a.1", Hir.char('z')), p("(?P<a.1>z)"))
+
+        assertEquals(namedCap(1u, "a[1]", Hir.char('z')), p("(?<a[1]>z)"))
+        assertEquals(namedCap(1u, "a[1]", Hir.char('z')), p("(?P<a[1]>z)"))
+
+        assertEquals(namedCap(1u, "a¾", Hir.char('z')), p("(?<a¾>z)"))
+        assertEquals(namedCap(1u, "a¾", Hir.char('z')), p("(?P<a¾>z)"))
+
+        assertEquals(namedCap(1u, "名字", Hir.char('z')), p("(?<名字>z)"))
+        assertEquals(namedCap(1u, "名字", Hir.char('z')), p("(?P<名字>z)"))
+    }
+
+    @Test
     fun okClass() {
         assertEquals(singles('a'), p("""[a]"""))
         assertEquals(singles('a', ']'), p("""[a\]]"""))
@@ -236,6 +288,88 @@ class ParserTest {
         assertEquals(classNode('a' to 'c', 'x' to 'z'), p("""[a-cx-z]"""))
         assertEquals(singles(']'), p("""[]]"""))
         assertEquals(singles(']', 'a'), p("""[]a]"""))
+    }
+
+    @Test
+    fun okVerbatim() {
+        assertEquals(
+            Hir.repetition(
+                Repetition(
+                    min = 5u,
+                    max = 9u,
+                    greedy = false,
+                    sub = Hir.char('a'),
+                ),
+            ),
+            p("""(?x)a{5,9} ?"""),
+        )
+        assertEquals(singles('a'), p("""(?x)[   a]"""))
+        assertEquals(
+            classNode('\u0000' to '`', 'b' to '\uFFFF'),
+            p("""(?x)[ ^  a]"""),
+        )
+        assertEquals(singles('a', '-'), p("""(?x)[ - a]"""))
+        assertEquals(singles(']', 'a'), p("""(?x)[ ] a]"""))
+
+        assertEquals(
+            Hir.concat(mutableListOf(Hir.char('a'), Hir.char('b'))),
+            p("""(?x)a b"""),
+        )
+        assertEquals(
+            Hir.concat(
+                mutableListOf(
+                    Hir.char('a'),
+                    Hir.char('b'),
+                    Hir.char('a'),
+                    Hir.char(' '),
+                    Hir.char('b'),
+                ),
+            ),
+            p("""(?x)a b(?-x)a b"""),
+        )
+        assertEquals(
+            Hir.concat(
+                mutableListOf(
+                    Hir.char('a'),
+                    Hir.char(' '),
+                    Hir.char('a'),
+                    Hir.char('a'),
+                    Hir.char(' '),
+                ),
+            ),
+            p("""a (?x:a )a """),
+        )
+        assertEquals(
+            namedCap(1u, "foo", Hir.char('a')),
+            p("""(?x)( ?P<foo> a )"""),
+        )
+        assertEquals(cap(1u, Hir.char('a')), p("""(?x)(  a )"""))
+        assertEquals(Hir.char('a'), p("""(?x)(   ?:  a )"""))
+        assertEquals(Hir.char('\u0053'), p("""(?x)\x { 53 }"""))
+        assertEquals(Hir.char(' '), p("""(?x)\ """))
+    }
+
+    @Test
+    fun okComments() {
+        val pat = """(?x)
+# This is comment 1.
+foo # This is comment 2.
+  # This is comment 3.
+bar
+# This is comment 4."""
+        assertEquals(
+            Hir.concat(
+                mutableListOf(
+                    Hir.char('f'),
+                    Hir.char('o'),
+                    Hir.char('o'),
+                    Hir.char('b'),
+                    Hir.char('a'),
+                    Hir.char('r'),
+                ),
+            ),
+            p(pat),
+        )
     }
 
     @Test
@@ -314,5 +448,132 @@ class ParserTest {
         assertEquals(ERR_SPECIAL_WORD_BOUNDARY_UNCLOSED, perr("""\b{foo!}"""))
         assertEquals(ERR_SPECIAL_WORD_BOUNDARY_UNRECOGNIZED, perr("""\b{foo}"""))
         assertEquals(ERR_SPECIAL_WORD_OR_REP_UNEXPECTED_EOF, perr("""\b{"""))
+    }
+
+    @Test
+    fun errVerbatim() {
+        assertEquals(ERR_CLASS_UNCLOSED_AFTER_DASH, perr("""(?x)[-#]"""))
+        assertEquals(ERR_CLASS_UNCLOSED_AFTER_ITEM, perr("""(?x)[a """))
+        assertEquals(ERR_CLASS_UNCLOSED_AFTER_DASH, perr("""(?x)[a- """))
+        assertEquals(ERR_CLASS_UNCLOSED, perr("""(?x)[         """))
+    }
+
+    @Test
+    fun regression454NestTooBig() {
+        val pattern = """
+        2(?:
+          [45]\d{3}|
+          7(?:
+            1[0-267]|
+            2[0-289]|
+            3[0-29]|
+            4[01]|
+            5[1-3]|
+            6[013]|
+            7[0178]|
+            91
+          )|
+          8(?:
+            0[125]|
+            [139][1-6]|
+            2[0157-9]|
+            41|
+            6[1-35]|
+            7[1-5]|
+            8[1-8]|
+            90
+          )|
+          9(?:
+            0[0-2]|
+            1[0-4]|
+            2[568]|
+            3[3-6]|
+            5[5-7]|
+            6[0167]|
+            7[15]|
+            8[0146-9]
+          )
+        )\d{4}
+        """
+        p(pattern)
+    }
+
+    @Test
+    fun regression455TrailingDashIgnoreWhitespace() {
+        p("(?x)[ / - ]")
+        p("(?x)[ a - ]")
+        p(
+            """(?x)[
+            a
+            - ]
+        """,
+        )
+        p(
+            """(?x)[
+            a # wat
+            - ]
+        """,
+        )
+
+        perr("(?x)[ / -")
+        perr("(?x)[ / - ")
+        perr(
+            """(?x)[
+            / -
+        """,
+        )
+        perr(
+            """(?x)[
+            / - # wat
+        """,
+        )
+    }
+
+    @Test
+    fun regressionCaptureIndices() {
+        val got = p("""(a|ab|c|bcd){4,10}(d*)""")
+        assertEquals(
+            Hir.concat(
+                mutableListOf(
+                    Hir.repetition(
+                        Repetition(
+                            min = 4u,
+                            max = 10u,
+                            greedy = true,
+                            sub =
+                                cap(
+                                    1u,
+                                    Hir.alternation(
+                                        mutableListOf(
+                                            Hir.char('a'),
+                                            Hir.concat(mutableListOf(Hir.char('a'), Hir.char('b'))),
+                                            Hir.char('c'),
+                                            Hir.concat(
+                                                mutableListOf(
+                                                    Hir.char('b'),
+                                                    Hir.char('c'),
+                                                    Hir.char('d'),
+                                                ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                        ),
+                    ),
+                    cap(
+                        2u,
+                        Hir.repetition(
+                            Repetition(
+                                min = 0u,
+                                max = null,
+                                greedy = true,
+                                sub = Hir.char('d'),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            got,
+        )
     }
 }

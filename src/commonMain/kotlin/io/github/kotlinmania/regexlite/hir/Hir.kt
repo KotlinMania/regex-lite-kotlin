@@ -1,4 +1,3 @@
-// port-lint: source hir/mod.rs
 package io.github.kotlinmania.regexlite.hir
 
 import io.github.kotlinmania.regexlite.isWordByte

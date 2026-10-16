@@ -40,7 +40,7 @@ internal class NonMaxUsize private constructor(
 
     // A custom string form is provided here because seeing the internal repr
     // can be quite surprising if you aren't expecting it. e.g.,
-    // 'NonMaxUsize(5)' vs just '5'.
+    // "[NonMaxUsize](5)" vs just "5".
     override fun toString(): String = value.toString()
 
     companion object {

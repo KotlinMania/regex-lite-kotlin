@@ -15,7 +15,12 @@ class Regex internal constructor(
         /**
          * Compiles a regular expression using default options.
          */
-        fun from(pattern: String): Result<Regex> = RegexBuilder(pattern).build()
+        fun new(pattern: String): Result<Regex> = RegexBuilder(pattern).build()
+
+        /**
+         * Compiles a regular expression using default options.
+         */
+        fun from(pattern: String): Result<Regex> = new(pattern)
     }
 
     /**
@@ -401,6 +406,10 @@ class Match(
         31 * (31 * haystack.hashCode() + start) + end
 
     override fun toString(): String = asStr()
+
+    companion object {
+        fun new(haystack: String, start: Int, end: Int): Match = Match(haystack, start, end)
+    }
 }
 
 /**
@@ -502,10 +511,25 @@ class Captures internal constructor(
 /**
  * A trait for types that can be used to replace matches in a haystack.
  */
-fun interface Replacer {
+interface Replacer {
     fun replaceAppend(caps: Captures, dst: StringBuilder)
 
     fun noExpansion(): String? = null
+
+    fun byRef(): Replacer = ReplacerRef(this)
+}
+
+/**
+ * A by-reference adaptor for a [Replacer].
+ */
+class ReplacerRef(
+    private val replacer: Replacer,
+) : Replacer {
+    override fun replaceAppend(caps: Captures, dst: StringBuilder) {
+        replacer.replaceAppend(caps, dst)
+    }
+
+    override fun noExpansion(): String? = replacer.noExpansion()
 }
 
 internal class StringReplacer(
@@ -533,8 +557,112 @@ class NoExpand(
     val text: String,
 ) : Replacer {
     override fun replaceAppend(caps: Captures, dst: StringBuilder) {
-        dst.append(text)
+        caps.let { dst.append(text) }
     }
 
     override fun noExpansion(): String = text
 }
+
+/**
+ * An iterator over all non-overlapping matches in a haystack.
+ */
+class Matches internal constructor(
+    private val sequence: Sequence<Match>,
+) : Sequence<Match> by sequence,
+    Iterator<Match> {
+    private val iterator by lazy { sequence.iterator() }
+
+    override fun hasNext(): Boolean = iterator.hasNext()
+
+    override fun next(): Match = iterator.next()
+
+    fun count(): Int = sequence.count()
+}
+
+/**
+ * An iterator over all non-overlapping capture matches in a haystack.
+ */
+class CaptureMatches internal constructor(
+    private val sequence: Sequence<Captures>,
+) : Sequence<Captures> by sequence,
+    Iterator<Captures> {
+    private val iterator by lazy { sequence.iterator() }
+
+    override fun hasNext(): Boolean = iterator.hasNext()
+
+    override fun next(): Captures = iterator.next()
+
+    fun count(): Int = sequence.count()
+}
+
+/**
+ * An iterator over all substrings delimited by a regex match.
+ */
+class Split internal constructor(
+    private val sequence: Sequence<String>,
+) : Sequence<String> by sequence,
+    Iterator<String> {
+    private val iterator by lazy { sequence.iterator() }
+
+    override fun hasNext(): Boolean = iterator.hasNext()
+
+    override fun next(): String = iterator.next()
+}
+
+/**
+ * An iterator over at most N substrings delimited by a regex match.
+ */
+class SplitN internal constructor(
+    private val sequence: Sequence<String>,
+) : Sequence<String> by sequence,
+    Iterator<String> {
+    private val iterator by lazy { sequence.iterator() }
+
+    override fun hasNext(): Boolean = iterator.hasNext()
+
+    override fun next(): String = iterator.next()
+}
+
+/**
+ * An iterator over the names of all capture groups in a regex.
+ */
+class CaptureNames internal constructor(
+    private val sequence: Sequence<String?>,
+) : Sequence<String?> by sequence,
+    Iterator<String?> {
+    private val iterator by lazy { sequence.iterator() }
+
+    override fun hasNext(): Boolean = iterator.hasNext()
+
+    override fun next(): String? = iterator.next()
+
+    fun count(): Int = sequence.count()
+}
+
+/**
+ * An iterator over all group matches in a [Captures] value.
+ */
+class SubCaptureMatches internal constructor(
+    private val sequence: Sequence<Match?>,
+) : Sequence<Match?> by sequence,
+    Iterator<Match?> {
+    private val iterator by lazy { sequence.iterator() }
+
+    override fun hasNext(): Boolean = iterator.hasNext()
+
+    override fun next(): Match? = iterator.next()
+
+    fun count(): Int = sequence.count()
+}
+
+internal class CapturesDebugMap(
+    val captures: Captures,
+)
+
+internal class Key(
+    val name: String,
+)
+
+internal class Value(
+    val match: Match?,
+)
