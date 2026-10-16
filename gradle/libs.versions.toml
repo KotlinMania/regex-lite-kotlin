@@ -3,10 +3,12 @@ kotlin = "2.4.20"
 coroutines = "1.11.0"
 serialization = "1.11.0"
 datetime = "0.8.0"
-collectionsImmutable = "0.5.0"
+collectionsImmutable = "0.5.2"
+anyhow = "0.1.1"
 androidKmp = "9.4.1"
-detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
-ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+detekt = "1.23.8"
+ktlint = "14.2.0"
+ktlintEngine = "1.8.0"
 kotlinxBenchmark = "0.5.0"
 
 [plugins]
@@ -25,6 +27,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "collectionsImmutable" }
 kotlinx-benchmark-runtime = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinxBenchmark" }
+anyhow-kotlin = { module = "io.github.kotlinmania:anyhow-kotlin", version.ref = "anyhow" }
 
 [bundles]
 regex-lite-commonMain = [
@@ -33,4 +36,7 @@ regex-lite-commonMain = [
   "kotlinx-serialization-json",
   "kotlinx-datetime",
   "collections-immutable",
+]
+regex-lite-commonTest = [
+  "anyhow-kotlin",
 ]

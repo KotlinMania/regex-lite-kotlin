@@ -17,7 +17,7 @@ package io.github.kotlinmania.regexlite
  * If [replacement] contains no capture group references, then [dst] will be
  * equivalent to [replacement].
  */
-internal fun interpolateString(
+internal fun string(
     replacement: String,
     append: (Int, StringBuilder) -> Unit,
     nameToIndex: (String) -> Int?,
@@ -58,6 +58,13 @@ internal fun interpolateString(
         }
     }
 }
+
+internal fun interpolateString(
+    replacement: String,
+    append: (Int, StringBuilder) -> Unit,
+    nameToIndex: (String) -> Int?,
+    dst: StringBuilder,
+) = string(replacement, append, nameToIndex, dst)
 
 /**
  * `CaptureRef` represents a reference to a capture group inside some text.
@@ -108,7 +115,7 @@ internal fun findCapRef(replacement: ByteArray): CaptureRef? {
         return findCapRefBraced(replacement, i + 1)
     }
     var capEnd = i
-    while (capEnd < replacement.size && isValidCapByte(replacement[capEnd])) {
+    while (capEnd < replacement.size && isValidCapLetter(replacement[capEnd])) {
         capEnd += 1
     }
     if (capEnd == i) {
@@ -158,7 +165,7 @@ private fun findCapRefBraced(rep: ByteArray, start: Int): CaptureRef? {
  * Returns true if and only if the given byte is allowed in a capture name
  * written in non-brace form.
  */
-private fun isValidCapByte(b: Byte): Boolean {
+private fun isValidCapLetter(b: Byte): Boolean {
     val v = b.toInt() and 0xFF
     return (v in '0'.code..'9'.code) ||
         (v in 'a'.code..'z'.code) ||

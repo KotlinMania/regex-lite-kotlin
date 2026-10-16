@@ -1,6 +1,7 @@
 // port-lint: tests string.rs
 package io.github.kotlinmania.regexlite
 
+import io.github.kotlinmania.regexlite.hir.escape
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

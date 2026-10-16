@@ -419,10 +419,6 @@ kotlin {
         configureBenchmarkCompilation()
         addToXcf()
     }
-    watchosArm64 {
-        configureBenchmarkCompilation()
-        addToXcf()
-    }
     watchosDeviceArm64 {
         configureBenchmarkCompilation()
         addToXcf()
@@ -685,6 +681,47 @@ rootProject.extensions.configure<NodeJsRootExtension>("kotlinNodeJs") {
     versions.kotlinWebHelpers.version = providers.gradleProperty("node.kotlinWebHelpers.version").getOrElse("3.1.0")
 }
 
+// Make kotlinUpgradeYarnLock and kotlinWasmUpgradeYarnLock dependencies in the build process
+// for KotlinJS and other JavaScript/WASM targets so that yarn.lock is always upgraded automatically.
+val jsTasksNeedingYarnLock =
+    setOf(
+        "compileKotlinJs",
+        "compileTestKotlinJs",
+        "jsProcessResources",
+        "jsTestProcessResources",
+        "jsNodeTest",
+        "jsBrowserTest",
+        "kotlinStoreYarnLock",
+    )
+
+tasks
+    .matching { it.name in jsTasksNeedingYarnLock }
+    .configureEach {
+        dependsOn("kotlinUpgradeYarnLock")
+    }
+
+val wasmTasksNeedingYarnLock =
+    setOf(
+        "compileKotlinWasmJs",
+        "compileTestKotlinWasmJs",
+        "wasmJsProcessResources",
+        "wasmJsTestProcessResources",
+        "wasmJsNodeTest",
+        "wasmJsBrowserTest",
+        "compileKotlinWasmWasi",
+        "compileTestKotlinWasmWasi",
+        "wasmWasiProcessResources",
+        "wasmWasiTestProcessResources",
+        "wasmWasiNodeTest",
+        "kotlinWasmStoreYarnLock",
+    )
+
+tasks
+    .matching { it.name in wasmTasksNeedingYarnLock }
+    .configureEach {
+        dependsOn("kotlinWasmUpgradeYarnLock")
+    }
+
 // ============================================================================
 // Maven Central publishing — Central Portal, first-party + bespoke upload
 // ----------------------------------------------------------------------------
@@ -898,6 +935,13 @@ val publishToCentralPortal by tasks.registering {
 // Exact test lifecycle task. Without this, ./gradlew test is ambiguous between
 // Android test task names. This runs commonTest through the KMP allTests
 // lifecycle and adds the Android host + Swift Export parity tests.
+tasks.register("test") {
+    group = "verification"
+    description = "Runs the commonTest-backed KMP suite, Android host tests, and Swift Export smoke test."
+    dependsOn("hostTests")
+    dependsOn("swiftExportSmokeTest")
+}
+
 tasks.register("setupAndroidSdk") {
     group = "setup"
     description = "Downloads and configures the project-local Android SDK. (Alias for ensureAndroidSdk)"
@@ -913,7 +957,9 @@ tasks.register("hostTests") {
     dependsOn(
         "jvmTest",
         "macosArm64Test",
+        "kotlinUpgradeYarnLock",
         "jsNodeTest",
+        "kotlinWasmUpgradeYarnLock",
         "wasmJsNodeTest",
         "wasmWasiNodeTest",
         "testAndroidHostTest",
@@ -923,7 +969,11 @@ tasks.register("hostTests") {
 // Patch generated SPM Package.swift to include minimum macOS platform for Swift Concurrency
 tasks.matching { it.name.contains("GenerateSPMPackage") }.configureEach {
     doLast {
-        val spmDir = layout.buildDirectory.dir("SPMPackage").orNull?.asFile
+        val spmDir =
+            layout.buildDirectory
+                .dir("SPMPackage")
+                .orNull
+                ?.asFile
         if (spmDir != null && spmDir.exists()) {
             spmDir.walkTopDown().filter { it.name == "Package.swift" }.forEach { file ->
                 val text = file.readText()
@@ -1023,7 +1073,6 @@ val nativeTargetNames =
         "mingwX64",
         "tvosArm64",
         "tvosSimulatorArm64",
-        "watchosArm64",
         "watchosDeviceArm64",
         "watchosSimulatorArm64",
     )
@@ -1041,6 +1090,10 @@ val fullTargetBuildTaskNames =
                 "assembleAndroidDeviceTest",
                 "jvmMainClasses",
                 "jvmTestClasses",
+                "kotlinUpgradeYarnLock",
+                "kotlinStoreYarnLock",
+                "kotlinWasmUpgradeYarnLock",
+                "kotlinWasmStoreYarnLock",
                 "jsMainClasses",
                 "jsTestClasses",
                 "wasmJsMainClasses",

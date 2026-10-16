@@ -930,5 +930,5 @@ private fun isCaptureChar(c: Char, first: Boolean): Boolean =
     if (first) {
         c == '_' || c.isLetter()
     } else {
-        c == '_' || c == '.' || c == '[' || c == ']' || c.isLetterOrDigit()
+        c == '_' || c == '.' || c == '[' || c == ']' || c.isLetterOrDigit() || c.category == CharCategory.OTHER_NUMBER || c.category == CharCategory.LETTER_NUMBER
     }

@@ -7,29 +7,29 @@ package io.github.kotlinmania.regexlite
  */
 internal fun isWordByte(b: Byte): Boolean = WORD[b.toInt() and 0xFF]
 
-private val WORD: BooleanArray =
-    run {
-        // FIXME: Use asUsize() once const functions in traits are stable.
-        val set = BooleanArray(256)
-        set['_'.code] = true
+private fun mkwordset(): BooleanArray {
+    val set = BooleanArray(256)
+    set['_'.code] = true
 
-        var byte = '0'.code
-        while (byte <= '9'.code) {
-            set[byte] = true
-            byte += 1
-        }
-        byte = 'A'.code
-        while (byte <= 'Z'.code) {
-            set[byte] = true
-            byte += 1
-        }
-        byte = 'a'.code
-        while (byte <= 'z'.code) {
-            set[byte] = true
-            byte += 1
-        }
-        set
+    var byte = '0'.code
+    while (byte <= '9'.code) {
+        set[byte] = true
+        byte += 1
     }
+    byte = 'A'.code
+    while (byte <= 'Z'.code) {
+        set[byte] = true
+        byte += 1
+    }
+    byte = 'a'.code
+    while (byte <= 'z'.code) {
+        set[byte] = true
+        byte += 1
+    }
+    return set
+}
+
+private val WORD: BooleanArray = mkwordset()
 
 /** The accept state index. When we enter this state, we know we've found a
  * valid Unicode scalar value. */
@@ -107,7 +107,7 @@ private fun decodeStep(state: Int, cp: Int, b: Byte): Pair<Int, Int> {
         if (state == ACCEPT) {
             (0xFF ushr cls) and byte
         } else {
-            (byte and 0b111111) or (cp shl 6)
+            (byte and 0x3F) or (cp shl 6)
         }
     val newState = STATES_FORWARD[state + cls].toInt() and 0xFF
     return Pair(newState, newCp)

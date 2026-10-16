@@ -3,7 +3,12 @@
 
 package io.github.kotlinmania.regexlite
 
+import io.github.kotlinmania.regexlite.pikevm.Cache
 import kotlin.concurrent.atomics.AtomicReference
+
+internal typealias CachePool = Pool<Cache>
+internal typealias CachePoolGuard = PoolGuard<Cache>
+internal typealias CachePoolFn = () -> Cache
 
 /**
  * A thread-safe pool.
@@ -11,6 +16,10 @@ import kotlin.concurrent.atomics.AtomicReference
 internal class Pool<T>(
     private val create: () -> T,
 ) {
+    companion object {
+        fun <T> new(create: () -> T): Pool<T> = Pool(create)
+    }
+
     private class Node<T>(
         val value: T,
         val next: Node<T>?,
@@ -35,7 +44,7 @@ internal class Pool<T>(
 
     /**
      * Puts a value back into the pool. Callers don't need to call this.
-     * Once the guard that's returned by 'get' is released / closed, it is put back
+     * Once the guard that is returned by [get] is released or closed, it is put back
      * into the pool automatically.
      */
     internal fun putValue(value: T) {
