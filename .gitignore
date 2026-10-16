@@ -67,3 +67,5 @@ DerivedData/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
 tools/ast_distance
+node_modules/
+package-lock.json
