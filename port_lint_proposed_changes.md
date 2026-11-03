@@ -1,6 +1,6 @@
 # port-lint Proposed Changes
 
-**Generated:** 2026-10-16
+**Generated:** 2026-10-26
 **Source:** tmp/regex-lite/src
 **Target:** src/commonMain/kotlin/io/github/kotlinmania/regexlite
 
