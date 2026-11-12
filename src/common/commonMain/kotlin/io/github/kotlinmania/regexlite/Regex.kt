@@ -53,7 +53,7 @@ class Regex internal constructor(
                 start = start,
                 end = hayBytes.size,
                 earliest = true,
-                slots = arrayOfNulls(0),
+                slots = CaptureSlots(0),
             )
         } finally {
             guard.release()
@@ -73,7 +73,7 @@ class Regex internal constructor(
         val hayBytes = haystack.encodeToByteArray()
         require(start <= hayBytes.size) { "start offset $start out of bounds ${hayBytes.size}" }
         val guard = pool.get()
-        val slots = arrayOfNulls<Int>(2)
+        val slots = CaptureSlots(2)
         try {
             val matched =
                 pikevm.search(
@@ -294,7 +294,7 @@ class Regex internal constructor(
         val hayBytes = haystack.encodeToByteArray()
         require(start <= hayBytes.size) { "start offset $start out of bounds ${hayBytes.size}" }
         val guard = pool.get()
-        val slots = arrayOfNulls<Int>(2)
+        val slots = CaptureSlots(2)
         try {
             val matched =
                 pikevm.search(
@@ -370,7 +370,7 @@ class Regex internal constructor(
      */
     fun captureLocations(): CaptureLocations {
         val len = pikevm.nfa.groupLen() * 2
-        return CaptureLocations(arrayOfNulls(len))
+        return CaptureLocations(CaptureSlots(len))
     }
 
     override fun toString(): String = asStr()
@@ -416,7 +416,7 @@ class Match(
  * A low level representation of the byte offsets of each capture group.
  */
 class CaptureLocations internal constructor(
-    internal val slots: Array<Int?>,
+    internal val slots: CaptureSlots,
 ) {
     fun get(i: Int): Pair<Int, Int>? {
         val slot = i * 2
@@ -574,7 +574,12 @@ class Matches internal constructor(
 
     override fun hasNext(): Boolean = iterator.hasNext()
 
-    override fun next(): Match = iterator.next()
+    override fun next(): Match {
+        if (!iterator.hasNext()) {
+            throw NoSuchElementException("No more elements")
+        }
+        return iterator.next()
+    }
 
     fun count(): Int = sequence.count()
 }
@@ -590,7 +595,12 @@ class CaptureMatches internal constructor(
 
     override fun hasNext(): Boolean = iterator.hasNext()
 
-    override fun next(): Captures = iterator.next()
+    override fun next(): Captures {
+        if (!iterator.hasNext()) {
+            throw NoSuchElementException("No more elements")
+        }
+        return iterator.next()
+    }
 
     fun count(): Int = sequence.count()
 }
@@ -606,7 +616,12 @@ class Split internal constructor(
 
     override fun hasNext(): Boolean = iterator.hasNext()
 
-    override fun next(): String = iterator.next()
+    override fun next(): String {
+        if (!iterator.hasNext()) {
+            throw NoSuchElementException("No more elements")
+        }
+        return iterator.next()
+    }
 }
 
 /**
@@ -620,7 +635,12 @@ class SplitN internal constructor(
 
     override fun hasNext(): Boolean = iterator.hasNext()
 
-    override fun next(): String = iterator.next()
+    override fun next(): String {
+        if (!iterator.hasNext()) {
+            throw NoSuchElementException("No more elements")
+        }
+        return iterator.next()
+    }
 }
 
 /**
@@ -634,7 +654,12 @@ class CaptureNames internal constructor(
 
     override fun hasNext(): Boolean = iterator.hasNext()
 
-    override fun next(): String? = iterator.next()
+    override fun next(): String? {
+        if (!iterator.hasNext()) {
+            throw NoSuchElementException("No more elements")
+        }
+        return iterator.next()
+    }
 
     fun count(): Int = sequence.count()
 }
@@ -650,7 +675,12 @@ class SubCaptureMatches internal constructor(
 
     override fun hasNext(): Boolean = iterator.hasNext()
 
-    override fun next(): Match? = iterator.next()
+    override fun next(): Match? {
+        if (!iterator.hasNext()) {
+            throw NoSuchElementException("No more elements")
+        }
+        return iterator.next()
+    }
 
     fun count(): Int = sequence.count()
 }

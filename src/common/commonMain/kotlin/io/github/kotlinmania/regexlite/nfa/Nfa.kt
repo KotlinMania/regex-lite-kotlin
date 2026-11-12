@@ -307,7 +307,7 @@ private class Compiler(
             return cEmpty()
         }
         val first = results[0].getOrElse { return Result.failure(it) }
-        var start = first.start
+        val start = first.start
         var end = first.end
         for (i in 1 until results.size) {
             val compiled = results[i].getOrElse { return Result.failure(it) }

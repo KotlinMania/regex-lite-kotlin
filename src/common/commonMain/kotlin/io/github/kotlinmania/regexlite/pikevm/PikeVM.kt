@@ -1,6 +1,7 @@
 // port-lint: source pikevm.rs
 package io.github.kotlinmania.regexlite.pikevm
 
+import io.github.kotlinmania.regexlite.CaptureSlots
 import io.github.kotlinmania.regexlite.decodeLossy
 import io.github.kotlinmania.regexlite.nfa.Nfa
 import io.github.kotlinmania.regexlite.nfa.State
@@ -20,7 +21,7 @@ internal class PikeVM(
             cache = cache,
             haystack = haystack,
             at = 0,
-            slots = arrayOfNulls(2),
+            slots = CaptureSlots(2),
             lastMatchEnd = null,
         )
 
@@ -33,7 +34,7 @@ internal class PikeVM(
                     cache = cache,
                     haystack = haystack,
                     at = 0,
-                    slots = arrayOfNulls(len),
+                    slots = CaptureSlots(len),
                     lastMatchEnd = null,
                 ),
         )
@@ -45,7 +46,7 @@ internal class PikeVM(
         start: Int,
         end: Int,
         earliest: Boolean,
-        slots: Array<Int?>,
+        slots: CaptureSlots,
     ): Boolean {
         cache.setupSearch(slots.size)
         if (start > end) {
@@ -110,7 +111,7 @@ internal class PikeVM(
         at: Int,
         atCh: Char,
         atLen: Int,
-        slots: Array<Int?>,
+        slots: CaptureSlots,
     ): Boolean {
         for (sid in curr.set) {
             if (nextState(stack, curr.slotTable, next, haystack, at, atCh, atLen, sid)) {
@@ -162,7 +163,7 @@ internal class PikeVM(
 
     private fun epsilonClosure(
         stack: MutableList<FollowEpsilon>,
-        currSlots: Array<Int?>,
+        currSlots: CaptureSlots,
         next: ActiveStates,
         haystack: ByteArray,
         at: Int,
@@ -183,7 +184,7 @@ internal class PikeVM(
 
     private fun epsilonClosureExplore(
         stack: MutableList<FollowEpsilon>,
-        currSlots: Array<Int?>,
+        currSlots: CaptureSlots,
         next: ActiveStates,
         haystack: ByteArray,
         at: Int,
@@ -243,7 +244,7 @@ internal class FindMatches(
     val cache: Cache,
     val haystack: ByteArray,
     var at: Int,
-    val slots: Array<Int?>,
+    val slots: CaptureSlots,
     var lastMatchEnd: Int?,
 ) : Iterator<Pair<Int, Int>> {
     override fun hasNext(): Boolean = findNext() != null
@@ -321,10 +322,10 @@ internal class FindMatches(
 
 internal class CapturesMatches(
     private val it: FindMatches,
-) : Iterator<Array<Int?>> {
+) : Iterator<CaptureSlots> {
     override fun hasNext(): Boolean = it.hasNext()
 
-    override fun next(): Array<Int?> {
+    override fun next(): CaptureSlots {
         if (!hasNext()) {
             throw NoSuchElementException()
         }
@@ -370,7 +371,7 @@ internal class ActiveStates(
 }
 
 internal class SlotTable {
-    private var table: Array<Int?> = emptyArray()
+    private var table: CaptureSlots = CaptureSlots(0)
     private var slotsPerState: Int = 0
     private var slotsForCaptures: Int = 0
 
@@ -379,19 +380,19 @@ internal class SlotTable {
         slotsPerState = nfa.groupLen() * 2
         slotsForCaptures = slotsPerState
         val len = (nfa.len() + 1) * slotsPerState
-        table = arrayOfNulls(len)
+        table = CaptureSlots(len)
     }
 
     fun setupSearch(capturesSlotLen: Int) {
         slotsForCaptures = capturesSlotLen
     }
 
-    fun getRow(sid: StateID): Array<Int?> {
+    fun getRow(sid: StateID): CaptureSlots {
         val i = sid.toInt() * slotsPerState
         return table.copyOfRange(i, i + slotsForCaptures)
     }
 
-    fun setRow(sid: StateID, slots: Array<Int?>) {
+    fun setRow(sid: StateID, slots: CaptureSlots) {
         val i = sid.toInt() * slotsPerState
         val count = minOf(slotsForCaptures, slots.size)
         for (idx in 0 until count) {
@@ -399,7 +400,7 @@ internal class SlotTable {
         }
     }
 
-    fun copyRow(sid: StateID, dest: Array<Int?>) {
+    fun copyRow(sid: StateID, dest: CaptureSlots) {
         val i = sid.toInt() * slotsPerState
         val count = minOf(slotsForCaptures, dest.size)
         for (idx in 0 until count) {
@@ -407,7 +408,7 @@ internal class SlotTable {
         }
     }
 
-    fun allAbsent(): Array<Int?> = arrayOfNulls(slotsForCaptures)
+    fun allAbsent(): CaptureSlots = CaptureSlots(slotsForCaptures)
 }
 
 internal sealed interface FollowEpsilon {
@@ -425,8 +426,8 @@ internal class SparseSet(
     capacity: Int,
 ) : Iterable<StateID> {
     private var len: Int = 0
-    private var dense: IntArray = IntArray(capacity)
-    private var sparse: IntArray = IntArray(capacity)
+    private val dense: IntArray = IntArray(capacity)
+    private val sparse: IntArray = IntArray(capacity)
 
     fun capacity(): Int = dense.size
 

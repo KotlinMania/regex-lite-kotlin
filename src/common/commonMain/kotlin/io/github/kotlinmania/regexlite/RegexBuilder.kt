@@ -14,8 +14,8 @@ import io.github.kotlinmania.regexlite.nfa.Config as NfaConfig
 class RegexBuilder(
     private val pattern: String,
 ) {
-    private var hirConfig = HirConfig()
-    private var nfaConfig = NfaConfig()
+    private val hirConfig = HirConfig()
+    private val nfaConfig = NfaConfig()
 
     /**
      * This configures whether to enable ASCII case insensitive matching for

@@ -14,8 +14,6 @@ class ParserTest {
     private fun classNode(vararg ranges: Pair<Char, Char>): Hir =
         Hir.classNode(Class(ranges.map { ClassRange(it.first, it.second) }.toMutableList()))
 
-    private fun `class`(vararg ranges: Pair<Char, Char>): Hir = classNode(*ranges)
-
     private fun singles(vararg chars: Char): Hir =
         Hir.classNode(Class(chars.map { ClassRange(it, it) }.toMutableList()))
 

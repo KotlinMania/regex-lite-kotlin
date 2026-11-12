@@ -314,7 +314,7 @@ internal class Class(
                 ),
             )
         }
-        for (i in 0 until drainEnd) {
+        repeat(drainEnd) {
             ranges.removeAt(0)
         }
     }
@@ -339,7 +339,7 @@ internal class Class(
             }
             ranges.add(ranges[oldi])
         }
-        for (i in 0 until drainEnd) {
+        repeat(drainEnd) {
             ranges.removeAt(0)
         }
     }

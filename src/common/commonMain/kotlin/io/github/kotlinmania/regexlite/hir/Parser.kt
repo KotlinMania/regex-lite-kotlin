@@ -100,7 +100,7 @@ internal class Parser(
 
     private fun bumpIf(prefix: String): Boolean {
         if (pos + prefix.length <= pattern.length && pattern.startsWith(prefix, pos)) {
-            for (i in 0 until prefix.length) {
+            repeat(prefix.length) {
                 bump()
             }
             return true
@@ -206,7 +206,7 @@ internal class Parser(
     internal fun parseInner(): Result<Hir> {
         val curDepth = incrementDepth().getOrElse { return Result.failure(it) }
         val alternates = mutableListOf<Hir>()
-        var concat = mutableListOf<Hir>()
+        val concat = mutableListOf<Hir>()
 
         while (true) {
             bumpSpace()
@@ -234,8 +234,8 @@ internal class Parser(
                     break
                 }
                 '|' -> {
-                    alternates.add(Hir.concat(concat))
-                    concat = mutableListOf()
+                    alternates.add(Hir.concat(concat.toMutableList()))
+                    concat.clear()
                     bump()
                 }
                 '[' -> {
@@ -243,12 +243,10 @@ internal class Parser(
                     concat.add(cls)
                 }
                 '?', '*', '+' -> {
-                    val newConcat = parseUncountedRepetition(concat).getOrElse { return Result.failure(it) }
-                    concat = newConcat
+                    parseUncountedRepetition(concat).getOrElse { return Result.failure(it) }
                 }
                 '{' -> {
-                    val newConcat = parseCountedRepetition(concat).getOrElse { return Result.failure(it) }
-                    concat = newConcat
+                    parseCountedRepetition(concat).getOrElse { return Result.failure(it) }
                 }
                 else -> {
                     val prim = parsePrimitive().getOrElse { return Result.failure(it) }
@@ -854,24 +852,24 @@ internal class Parser(
 }
 
 private fun checkHirNesting(hir: Hir, limit: UInt): Result<Unit> {
-    fun recurse(h: Hir, limit: UInt, depth: UInt): Result<Unit> {
-        if (depth > limit) {
+    fun recurse(h: Hir, nestingLimit: UInt, depth: UInt): Result<Unit> {
+        if (depth > nestingLimit) {
             return Result.failure(Exception(ERR_TOO_MUCH_NESTING))
         }
         val nextDepth = depth + 1u
         return when (val k = h.kind) {
             is HirKind.Empty, is HirKind.Char, is HirKind.Class, is HirKind.Look -> Result.success(Unit)
-            is HirKind.Repetition -> recurse(k.rep.sub, limit, nextDepth)
-            is HirKind.Capture -> recurse(k.cap.sub, limit, nextDepth)
+            is HirKind.Repetition -> recurse(k.rep.sub, nestingLimit, nextDepth)
+            is HirKind.Capture -> recurse(k.cap.sub, nestingLimit, nextDepth)
             is HirKind.Concat -> {
                 for (sub in k.subs) {
-                    recurse(sub, limit, nextDepth).getOrElse { return Result.failure(it) }
+                    recurse(sub, nestingLimit, nextDepth).getOrElse { return Result.failure(it) }
                 }
                 Result.success(Unit)
             }
             is HirKind.Alternation -> {
                 for (sub in k.subs) {
-                    recurse(sub, limit, nextDepth).getOrElse { return Result.failure(it) }
+                    recurse(sub, nestingLimit, nextDepth).getOrElse { return Result.failure(it) }
                 }
                 Result.success(Unit)
             }

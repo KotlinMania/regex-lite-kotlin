@@ -110,7 +110,7 @@ internal fun findCapRef(replacement: ByteArray): CaptureRef? {
     if (replacement.size <= 1 || replacement[0] != '$'.code.toByte()) {
         return null
     }
-    var i = 1
+    val i = 1
     if (replacement[i] == '{'.code.toByte()) {
         return findCapRefBraced(replacement, i + 1)
     }
