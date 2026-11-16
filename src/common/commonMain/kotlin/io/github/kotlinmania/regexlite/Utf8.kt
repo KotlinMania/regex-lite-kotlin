@@ -45,13 +45,16 @@ private const val REJECT: Int = 0
  *
  * The returned codepoint is a Unicode scalar value packed into an [Int].
  */
-internal fun decodeLossy(slice: ByteArray): Pair<Int, Int> {
-    val (ch, size) = decode(slice)
+internal fun decodeLossy(
+    slice: ByteArray,
+    offset: Int = 0,
+): Pair<Int, Int> {
+    val (ch, size) = decode(slice, offset)
     return if (ch != null) Pair(ch, size) else Pair(0xFFFD, size)
 }
 
 /**
- * UTF-8 decode a single Unicode scalar value from the beginning of a slice.
+ * UTF-8 decode a single Unicode scalar value from [slice] starting at [offset].
  *
  * When successful, the corresponding Unicode scalar value (as an [Int]
  * codepoint) is returned along with the number of bytes it was encoded with.
@@ -61,20 +64,23 @@ internal fun decodeLossy(slice: ByteArray): Pair<Int, Int> {
  * When unsuccessful, `null` is returned along with the number of bytes that
  * make up a maximal prefix of a valid UTF-8 code unit sequence. In this case,
  * the number of bytes consumed is always between 0 and 3, inclusive, where
- * 0 is only returned when [slice] is empty.
+ * 0 is only returned when `offset >= slice.size`.
  */
-internal fun decode(slice: ByteArray): Pair<Int?, Int> {
-    if (slice.isEmpty()) {
+internal fun decode(
+    slice: ByteArray,
+    offset: Int = 0,
+): Pair<Int?, Int> {
+    if (offset >= slice.size || offset < 0) {
         return Pair(null, 0)
     }
-    val b0 = slice[0].toInt() and 0xFF
+    val b0 = slice[offset].toInt() and 0xFF
     if (b0 <= 0x7F) {
         return Pair(b0, 1)
     }
 
     var state = ACCEPT
     var cp = 0
-    var i = 0
+    var i = offset
     while (i < slice.size) {
         val step = decodeStep(state, cp, slice[i])
         state = step.first
@@ -87,13 +93,13 @@ internal fun decode(slice: ByteArray): Pair<Int?, Int> {
             //
             // We don't have to use safe code here, but do so because perf
             // isn't our primary objective in regex-lite.
-            return Pair(cp, i)
+            return Pair(cp, i - offset)
         } else if (state == REJECT) {
             // At this point, we always want to advance at least one byte.
-            return Pair(null, maxOf(1, i - 1))
+            return Pair(null, maxOf(1, i - offset - 1))
         }
     }
-    return Pair(null, i)
+    return Pair(null, i - offset)
 }
 
 /** Transitions to the next state and updates `cp` while it does. */

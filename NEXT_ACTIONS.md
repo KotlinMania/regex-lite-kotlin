@@ -5,10 +5,10 @@ Based on AST analysis, here are the concrete next steps.
 ## Summary
 
 - **Files Present:** 9/11 (81.8%)
-- **Function parity:** 173/270 matched (target 221) — 64.1%
+- **Function parity:** 170/270 matched (target 223) — 63.0%
 - **Class/type parity:** 41/52 matched (target 55) — 78.8%
-- **Combined symbol parity:** 214/322 matched (target 276) — 66.5%
-- **Average inline-code cosine:** 0.09 (function body across 9 matched files)
+- **Combined symbol parity:** 211/322 matched (target 278) — 65.5%
+- **Average inline-code cosine:** 0.08 (function body across 9 matched files)
 - **Average documentation cosine:** 0.52 (doc text across 9 matched files)
 - **Cheat-zeroed Files:** 0
 - **Critical Issues:** 9 files with <0.60 function similarity
@@ -31,7 +31,7 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 1. string
 
-- **Target:** `Regex`
+- **Target:** `regexlite.Regex`
 - **Similarity:** 0.13
 - **Dependents:** 1
 - **Priority Score:** 1351508.8
@@ -54,11 +54,11 @@ Every matched file is listed below with function and type symbol parity.
 ### 3. hir.parse
 
 - **Target:** `hir.Parser`
-- **Similarity:** 0.15
+- **Similarity:** 0.12
 - **Dependents:** 0
-- **Priority Score:** 317708.5
-- **Functions:** 45/76 matched (target 45)
-- **Missing functions:** `new`, `pattern`, `flags`, `p`, `perr`, `class`, `singles`, `posix`, `cap`, `named_cap`, `ok_literal`, `ok_meta_escapes`, `ok_special_escapes`, `ok_hex`, `ok_perl`, `ok_flags_and_primitives`, `ok_alternate`, `ok_flag_group`, `ok_flag_directive`, `ok_uncounted_repetition`, `ok_counted_repetition`, `ok_group_unnamed`, `ok_group_named`, `ok_class`, `ok_verbatim`, `ok_comments`, `err_standard`, `err_verbatim`, `regression_454_nest_too_big`, `regression_455_trailing_dash_ignore_whitespace`, `regression_capture_indices`
+- **Priority Score:** 347708.8
+- **Functions:** 42/76 matched (target 47)
+- **Missing functions:** `new`, `pattern`, `pos`, `char`, `flags`, `is_capture_char`, `p`, `perr`, `class`, `singles`, `posix`, `cap`, `named_cap`, `ok_literal`, `ok_meta_escapes`, `ok_special_escapes`, `ok_hex`, `ok_perl`, `ok_flags_and_primitives`, `ok_alternate`, `ok_flag_group`, `ok_flag_directive`, `ok_uncounted_repetition`, `ok_counted_repetition`, `ok_group_unnamed`, `ok_group_named`, `ok_class`, `ok_verbatim`, `ok_comments`, `err_standard`, `err_verbatim`, `regression_454_nest_too_big`, `regression_455_trailing_dash_ignore_whitespace`, `regression_capture_indices`
 - **Types:** 1/1 matched
 - **Missing types:** _none_
 - **Tests:** 0/28 matched
@@ -76,7 +76,7 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 5. pool
 
-- **Target:** `Pool`
+- **Target:** `regexlite.Pool`
 - **Similarity:** 0.03
 - **Dependents:** 0
 - **Priority Score:** 61409.7
@@ -87,10 +87,10 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 6. utf8
 
-- **Target:** `Utf8`
-- **Similarity:** 0.11
+- **Target:** `regexlite.Utf8`
+- **Similarity:** 0.10
 - **Dependents:** 0
-- **Priority Score:** 40908.9
+- **Priority Score:** 40909.0
 - **Functions:** 5/9 matched (target 5)
 - **Missing functions:** `decode_valid`, `d`, `decode_invalid`, `decode_lossily`
 - **Types:** 0/0 matched
@@ -99,7 +99,7 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 7. interpolate
 
-- **Target:** `Interpolate`
+- **Target:** `regexlite.Interpolate`
 - **Similarity:** 0.06
 - **Dependents:** 0
 - **Priority Score:** 30909.4
@@ -111,7 +111,7 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 8. int
 
-- **Target:** `Int`
+- **Target:** `regexlite.Int`
 - **Similarity:** 0.02
 - **Dependents:** 0
 - **Priority Score:** 20609.8
@@ -122,7 +122,7 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 9. error
 
-- **Target:** `Error`
+- **Target:** `regexlite.Error`
 - **Similarity:** 0.00
 - **Dependents:** 0
 - **Priority Score:** 20310.0

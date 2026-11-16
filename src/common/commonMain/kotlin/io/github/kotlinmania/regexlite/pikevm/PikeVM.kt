@@ -76,13 +76,12 @@ internal class PikeVM(
                 epsilonClosure(stack, absSlots, curr, haystack, at, startId)
             }
 
-            val (cp, len) =
+            val (ch, len) =
                 if (at < haystack.size) {
-                    decodeLossy(haystack.copyOfRange(at, haystack.size))
+                    decodeLossy(haystack, at)
                 } else {
                     Pair(0, 0)
                 }
-            val ch = cp.toChar()
 
             if (nexts(stack, curr, next, haystack, at, ch, len, slots)) {
                 matched = true
@@ -109,7 +108,7 @@ internal class PikeVM(
         next: ActiveStates,
         haystack: ByteArray,
         at: Int,
-        atCh: Char,
+        atCh: Int,
         atLen: Int,
         slots: CaptureSlots,
     ): Boolean {
@@ -128,7 +127,7 @@ internal class PikeVM(
         next: ActiveStates,
         haystack: ByteArray,
         at: Int,
-        atCh: Char,
+        atCh: Int,
         atLen: Int,
         sid: StateID,
     ): Boolean {
@@ -298,7 +297,7 @@ internal class FindMatches(
         if (m.second == lastMatchEnd) {
             val len =
                 if (at < haystack.size) {
-                    max(1, decodeLossy(haystack.copyOfRange(at, haystack.size)).second)
+                    max(1, decodeLossy(haystack, at).second)
                 } else {
                     1
                 }

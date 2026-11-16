@@ -218,4 +218,59 @@ class RegexTest {
         val matches = re.findIter("abc").map { it.start to it.end }.toList()
         assertEquals(listOf(0 to 0, 1 to 1, 2 to 2, 3 to 3), matches)
     }
+
+    @Test
+    fun testNegatedShorthandAndLiteralClasses() {
+        assertEquals("ab@15.x", Regex("""[^\w.@]+""").replaceAll("ab@15.x", "-"))
+        assertEquals("ab@15.x", Regex("""[^.@\w]+""").replaceAll("ab@15.x", "-"))
+        assertEquals("-@15.-", Regex("""[^0-9.@]+""").replaceAll("ab@15.x", "-"))
+        assertEquals("ab-15-x", Regex("""[^\w]+""").replaceAll("ab@15.x", "-"))
+    }
+
+    @Test
+    fun testSupplementaryUnicodeScalarParity() {
+        val u10061 = "\uD800\uDC61"
+        assertFalse(Regex("a").isMatch(u10061))
+        assertTrue(Regex(u10061).isMatch(u10061))
+        assertTrue(Regex("""\x{10061}""").isMatch(u10061))
+        assertFalse(Regex("""\x{10061}""").isMatch("a"))
+        assertEquals("-a", Regex("[^a]+").replaceAll("${u10061}a", "-"))
+
+        val dotPoop = Regex(".").find("💩")
+        assertNotNull(dotPoop)
+        assertEquals(0 until 4, dotPoop.range)
+        val negPoop = Regex("[^a]").find("💩")
+        assertNotNull(negPoop)
+        assertEquals(0 until 4, negPoop.range)
+
+        val dotSurrogate = Regex(".").find(u10061)
+        assertNotNull(dotSurrogate)
+        assertEquals(0 until 4, dotSurrogate.range)
+
+        val negMath = Regex("[^a]+").find("𝑎bc")
+        assertNotNull(negMath)
+        assertEquals(0 until 4, negMath.range)
+    }
+
+    @Test
+    fun testUpstreamRegexLiteTomlParity() {
+        assertFalse(Regex("""\d""").isMatch("᠕"))
+        assertFalse(Regex("""\s""").isMatch("\u2000"))
+        assertFalse(Regex("""\w""").isMatch("δ"))
+        assertFalse(Regex("""\b""").isMatch("δ"))
+        assertEquals(
+            listOf(0 to 0, 2 to 2),
+            Regex("""\B""").findIter("δ").map { it.start to it.end }.toList(),
+        )
+        assertEquals(
+            listOf(0 to 0, 4 to 4),
+            Regex("").findIter("💩").map { it.start to it.end }.toList(),
+        )
+        assertFalse(RegexBuilder("s").caseInsensitive(true).build().getOrThrow().isMatch("ſ"))
+
+        val unicodeErr = Regex.new("""\p{L}""").exceptionOrNull()
+        assertNotNull(unicodeErr)
+        assertTrue(unicodeErr is Error)
+        assertEquals("Unicode character classes are not supported", unicodeErr.message)
+    }
 }

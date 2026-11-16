@@ -11,6 +11,9 @@ class ParserTest {
     private fun perr(pattern: String): String =
         Parser(Config(), pattern).parseInner().exceptionOrNull()!!.message!!
 
+    private fun classRanges(vararg ranges: Pair<Int, Int>): Hir =
+        Hir.classNode(Class(ranges.map { ClassRange(it.first, it.second) }.toMutableList()))
+
     private fun classNode(vararg ranges: Pair<Char, Char>): Hir =
         Hir.classNode(Class(ranges.map { ClassRange(it.first, it.second) }.toMutableList()))
 
@@ -30,7 +33,7 @@ class ParserTest {
     fun okLiteral() {
         assertEquals(Hir.char('a'), p("a"))
         assertEquals(Hir.concat(mutableListOf(Hir.char('a'), Hir.char('b'))), p("ab"))
-        assertEquals(Hir.concat(mutableListOf(Hir.char('\uD83D'), Hir.char('\uDCA9'))), p("💩"))
+        assertEquals(Hir.char(0x1F4A9), p("💩"))
     }
 
     @Test
@@ -66,9 +69,13 @@ class ParserTest {
         // fixed length
         assertEquals(Hir.char('A'), p("""\x41"""))
         assertEquals(Hir.char('☃'), p("""\u2603"""))
+        assertEquals(Hir.char(0x1F4A9), p("""\U0001F4A9"""))
         // braces
         assertEquals(Hir.char('A'), p("""\x{41}"""))
         assertEquals(Hir.char('☃'), p("""\u{2603}"""))
+        assertEquals(Hir.char(0x1F4A9), p("""\x{1F4A9}"""))
+        assertEquals(Hir.char(0x1F4A9), p("""\u{1F4A9}"""))
+        assertEquals(Hir.char(0x1F4A9), p("""\U{1F4A9}"""))
     }
 
     @Test
@@ -100,17 +107,17 @@ class ParserTest {
         assertEquals(Hir.look(Look.EndLF), p("""(?m:$)"""))
         assertEquals(Hir.look(Look.EndCRLF), p("""(?mR:$)"""))
 
-        assertEquals(classNode('\u0000' to '\u0009', '\u000B' to '\uFFFF'), p("""."""))
+        assertEquals(classRanges(0x0000 to 0x0009, 0x000B to 0x10FFFF), p("""."""))
         assertEquals(
-            classNode(
-                '\u0000' to '\u0009',
-                '\u000B' to '\u000C',
-                '\u000E' to '\uFFFF',
+            classRanges(
+                0x0000 to 0x0009,
+                0x000B to 0x000C,
+                0x000E to 0x10FFFF,
             ),
             p("""(?R:.)"""),
         )
-        assertEquals(classNode('\u0000' to '\uFFFF'), p("""(?s:.)"""))
-        assertEquals(classNode('\u0000' to '\uFFFF'), p("""(?sR:.)"""))
+        assertEquals(classRanges(0x0000 to 0x10FFFF), p("""(?s:.)"""))
+        assertEquals(classRanges(0x0000 to 0x10FFFF), p("""(?sR:.)"""))
     }
 
     @Test
@@ -279,13 +286,35 @@ class ParserTest {
         assertEquals(classNode('a' to 'b'), p("""[ab]"""))
         assertEquals(singles('a', '-'), p("""[a-]"""))
         assertEquals(singles('a', '-'), p("""[-a]"""))
+        assertEquals(singles('a', '-'), p("""[--a]"""))
+        assertEquals(singles('a', '-'), p("""[---a]"""))
         assertEquals(posix("alnum"), p("""[[:alnum:]]"""))
         assertEquals(posix("word"), p("""[\w]"""))
-        assertEquals(classNode('\u0000' to '\uFFFF'), p("""[\s\S]"""))
+        assertEquals(posix("word"), p("""[a\wz]"""))
+        assertEquals(classRanges(0x0000 to 0x10FFFF), p("""[\s\S]"""))
         assertEquals(Hir.fail(), p("""[^\s\S]"""))
         assertEquals(classNode('a' to 'c', 'x' to 'z'), p("""[a-cx-z]"""))
+        assertEquals(classNode('☃' to '⛄'), p("""[☃-⛄]"""))
         assertEquals(singles(']'), p("""[]]"""))
         assertEquals(singles(']', 'a'), p("""[]a]"""))
+        assertEquals(singles('[', ']'), p("""[]\[]"""))
+        assertEquals(singles('['), p("""[\[]"""))
+
+        assertEquals(singles('A', 'a'), p("""(?i)[a]"""))
+        assertEquals(singles('A', 'a'), p("""(?i)[A]"""))
+        assertEquals(singles('K', 'k'), p("""(?i)[k]"""))
+        assertEquals(singles('S', 's'), p("""(?i)[s]"""))
+        assertEquals(singles('β'), p("""(?i)[β]"""))
+
+        assertEquals(classRanges(0x0000 to ']'.code, '_'.code to 0x10FFFF), p("""[^^]"""))
+        assertEquals(
+            classRanges(0x0000 to ','.code, '.'.code to '`'.code, 'b'.code to 0x10FFFF),
+            p("""[^-a]"""),
+        )
+        assertEquals(
+            Hir.concat(mutableListOf(singles('-'), Hir.char('a'), Hir.char(']'))),
+            p("""[-]a]"""),
+        )
     }
 
     @Test
@@ -303,7 +332,7 @@ class ParserTest {
         )
         assertEquals(singles('a'), p("""(?x)[   a]"""))
         assertEquals(
-            classNode('\u0000' to '`', 'b' to '\uFFFF'),
+            classRanges(0x0000 to '`'.code, 'b'.code to 0x10FFFF),
             p("""(?x)[ ^  a]"""),
         )
         assertEquals(singles('a', '-'), p("""(?x)[ - a]"""))
@@ -405,9 +434,15 @@ bar
         assertEquals(ERR_FLAG_DANGLING_NEGATION, perr("""(?is-:foo)"""))
         assertEquals(ERR_HEX_BRACE_INVALID_DIGIT, perr("""\x{Z}"""))
         assertEquals(ERR_HEX_BRACE_UNEXPECTED_EOF, perr("""\x{"""))
+        assertEquals(ERR_HEX_BRACE_UNEXPECTED_EOF, perr("""\x{A"""))
         assertEquals(ERR_HEX_BRACE_EMPTY, perr("""\x{}"""))
+        assertEquals(ERR_HEX_BRACE_INVALID, perr("""\x{FFFFFFFFFFFFFFFFF}"""))
         assertEquals(ERR_HEX_FIXED_UNEXPECTED_EOF, perr("""\xA"""))
         assertEquals(ERR_HEX_FIXED_INVALID_DIGIT, perr("""\xZ"""))
+        assertEquals(ERR_HEX_FIXED_INVALID_DIGIT, perr("""\xZA"""))
+        assertEquals(ERR_HEX_FIXED_INVALID_DIGIT, perr("""\xAZ"""))
+        assertEquals(ERR_HEX_FIXED_INVALID, perr("""\uD800"""))
+        assertEquals(ERR_HEX_FIXED_INVALID, perr("""\UFFFFFFFF"""))
         assertEquals(ERR_HEX_UNEXPECTED_EOF, perr("""\x"""))
         assertEquals(ERR_ESCAPE_UNEXPECTED_EOF, perr("""\"""))
         assertEquals(ERR_BACKREF_UNSUPPORTED, perr("""\0"""))
@@ -419,7 +454,12 @@ bar
         assertEquals(ERR_UNCOUNTED_REP_SUB_MISSING, perr("?"))
         assertEquals(ERR_UNCOUNTED_REP_SUB_MISSING, perr("*"))
         assertEquals(ERR_UNCOUNTED_REP_SUB_MISSING, perr("+"))
+        assertEquals(ERR_UNCOUNTED_REP_SUB_MISSING, perr("(+)"))
+        assertEquals(ERR_UNCOUNTED_REP_SUB_MISSING, perr("|?"))
+        assertEquals(ERR_UNCOUNTED_REP_SUB_MISSING, perr("(?i)?"))
         assertEquals(ERR_COUNTED_REP_SUB_MISSING, perr("{5}"))
+        assertEquals(ERR_COUNTED_REP_SUB_MISSING, perr("({5})"))
+        assertEquals(ERR_COUNTED_REP_SUB_MISSING, perr("(?i){5}"))
         assertEquals(ERR_COUNTED_REP_UNCLOSED, perr("a{"))
         assertEquals(ERR_COUNTED_REP_MIN_UNCLOSED, perr("a{5"))
         assertEquals(ERR_COUNTED_REP_COMMA_UNCLOSED, perr("a{5,"))
@@ -427,6 +467,8 @@ bar
         assertEquals(ERR_COUNTED_REP_INVALID, perr("a{5,6Z"))
         assertEquals(ERR_COUNTED_REP_INVALID_RANGE, perr("a{6,5}"))
         assertEquals(ERR_DECIMAL_NO_DIGITS, perr("a{}"))
+        assertEquals(ERR_DECIMAL_NO_DIGITS, perr("a{]}"))
+        assertEquals(ERR_DECIMAL_INVALID, perr("a{999999999999999}"))
         assertEquals(ERR_CLASS_UNCLOSED_AFTER_ITEM, perr("[a"))
         assertEquals(ERR_CLASS_INVALID_RANGE_ITEM, perr("""[\w-a]"""))
         assertEquals(ERR_CLASS_INVALID_RANGE_ITEM, perr("""[a-\w]"""))

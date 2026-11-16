@@ -11,7 +11,7 @@ import io.github.kotlinmania.regexlite.isWordByte
 public fun escape(pattern: String): String {
     val buf = StringBuilder(pattern.length)
     for (ch in pattern) {
-        if (isMetaCharacter(ch)) {
+        if (isMetaCharacter(ch.code)) {
             buf.append('\\')
         }
         buf.append(ch)
@@ -20,26 +20,49 @@ public fun escape(pattern: String): String {
 }
 
 /**
- * Returns true if the given character has significance in a regex.
+ * Returns true if the given Unicode scalar codepoint has significance in a regex.
  */
-internal fun isMetaCharacter(c: Char): Boolean =
+internal fun isMetaCharacter(c: Int): Boolean =
     when (c) {
-        '\\', '.', '+', '*', '?', '(', ')', '|', '[', ']', '{', '}', '^', '$', '#', '&', '-', '~' -> true
+        '\\'.code,
+        '.'.code,
+        '+'.code,
+        '*'.code,
+        '?'.code,
+        '('.code,
+        ')'.code,
+        '|'.code,
+        '['.code,
+        ']'.code,
+        '{'.code,
+        '}'.code,
+        '^'.code,
+        '$'.code,
+        '#'.code,
+        '&'.code,
+        '-'.code,
+        '~'.code,
+        -> true
         else -> false
     }
 
 /**
- * Returns true if the given character can be escaped in a regex.
+ * Returns true if the given Unicode scalar codepoint can be escaped in a regex.
  */
-internal fun isEscapableCharacter(c: Char): Boolean {
+internal fun isEscapableCharacter(c: Int): Boolean {
     if (isMetaCharacter(c)) {
         return true
     }
-    if (c.code > 0x7F) {
+    if (c < 0 || c > 0x7F) {
         return false
     }
     return when (c) {
-        in '0'..'9', in 'A'..'Z', in 'a'..'z', '<', '>' -> false
+        in '0'.code..'9'.code,
+        in 'A'.code..'Z'.code,
+        in 'a'.code..'z'.code,
+        '<'.code,
+        '>'.code,
+        -> false
         else -> true
     }
 }
@@ -110,13 +133,15 @@ internal class Hir(
                 staticExplicitCapturesLen = 0,
             )
 
-        fun char(ch: Char): Hir =
+        fun char(ch: Int): Hir =
             Hir(
                 kind = HirKind.Char(ch),
                 isStartAnchored = false,
                 isMatchEmpty = false,
                 staticExplicitCapturesLen = 0,
             )
+
+        fun char(ch: kotlin.Char): Hir = char(ch.code)
 
         fun classNode(cls: Class): Hir =
             Hir(
@@ -225,7 +250,7 @@ internal sealed class HirKind {
     data object Empty : HirKind()
 
     data class Char(
-        val ch: kotlin.Char,
+        val ch: Int,
     ) : HirKind()
 
     data class Class(
@@ -281,36 +306,36 @@ internal class Class(
     }
 
     fun negate() {
-        val minChar = '\u0000'
-        val maxChar = '\uFFFF'
+        val minScalar = 0x0000
+        val maxScalar = 0x10FFFF
 
         if (ranges.isEmpty()) {
-            ranges.add(ClassRange(minChar, maxChar))
+            ranges.add(ClassRange(minScalar, maxScalar))
             return
         }
 
         val drainEnd = ranges.size
-        if (ranges[0].start > minChar) {
+        if (ranges[0].start > minScalar) {
             ranges.add(
                 ClassRange(
-                    start = minChar,
-                    end = prevChar(ranges[0].start)!!,
+                    start = minScalar,
+                    end = prevScalar(ranges[0].start)!!,
                 ),
             )
         }
         for (i in 1 until drainEnd) {
             ranges.add(
                 ClassRange(
-                    start = nextChar(ranges[i - 1].end)!!,
-                    end = prevChar(ranges[i].start)!!,
+                    start = nextScalar(ranges[i - 1].end)!!,
+                    end = prevScalar(ranges[i].start)!!,
                 ),
             )
         }
-        if (ranges[drainEnd - 1].end < maxChar) {
+        if (ranges[drainEnd - 1].end < maxScalar) {
             ranges.add(
                 ClassRange(
-                    start = nextChar(ranges[drainEnd - 1].end)!!,
-                    end = maxChar,
+                    start = nextScalar(ranges[drainEnd - 1].end)!!,
+                    end = maxScalar,
                 ),
             )
         }
@@ -367,29 +392,31 @@ internal class Class(
 }
 
 internal class ClassRange(
-    val start: Char,
-    val end: Char,
+    val start: Int,
+    val end: Int,
 ) : Comparable<ClassRange> {
+    constructor(start: Char, end: Char) : this(start.code, end.code)
+
     fun asciiCaseFold(): ClassRange? {
-        val lowerA = 'a'
-        val lowerZ = 'z'
-        val upperA = 'A'
-        val upperZ = 'Z'
+        val lowerA = 'a'.code
+        val lowerZ = 'z'.code
+        val upperA = 'A'.code
+        val upperZ = 'Z'.code
 
         if (!ClassRange(lowerA, lowerZ).isIntersectionEmpty(this)) {
             val s = maxOf(start, lowerA)
             val e = minOf(end, lowerZ)
             return ClassRange(
-                start = (s.code - 32).toChar(),
-                end = (e.code - 32).toChar(),
+                start = s - 32,
+                end = e - 32,
             )
         }
         if (!ClassRange(upperA, upperZ).isIntersectionEmpty(this)) {
             val s = maxOf(start, upperA)
             val e = minOf(end, upperZ)
             return ClassRange(
-                start = (s.code + 32).toChar(),
-                end = (e.code + 32).toChar(),
+                start = s + 32,
+                end = e + 32,
             )
         }
         return null
@@ -404,21 +431,11 @@ internal class ClassRange(
         return ClassRange(s, e)
     }
 
-    fun isContiguous(other: ClassRange): Boolean {
-        val s1 = start.code
-        val e1 = end.code
-        val s2 = other.start.code
-        val e2 = other.end.code
-        return maxOf(s1, s2) <= minOf(e1, e2) + 1
-    }
+    fun isContiguous(other: ClassRange): Boolean =
+        maxOf(start, other.start) <= minOf(end, other.end) + 1
 
-    fun isIntersectionEmpty(other: ClassRange): Boolean {
-        val s1 = start.code
-        val e1 = end.code
-        val s2 = other.start.code
-        val e2 = other.end.code
-        return maxOf(s1, s2) > minOf(e1, e2)
-    }
+    fun isIntersectionEmpty(other: ClassRange): Boolean =
+        maxOf(start, other.start) > minOf(end, other.end)
 
     override fun compareTo(other: ClassRange): Int {
         val cmp = start.compareTo(other.start)
@@ -428,9 +445,9 @@ internal class ClassRange(
     override fun equals(other: Any?): Boolean =
         this === other || (other is ClassRange && start == other.start && end == other.end)
 
-    override fun hashCode(): Int = 31 * start.hashCode() + end.hashCode()
+    override fun hashCode(): Int = 31 * start + end
 
-    override fun toString(): String = "ClassRange($start..$end)"
+    override fun toString(): String = "ClassRange(0x${start.toString(16)}..0x${end.toString(16)})"
 }
 
 internal enum class Look(
@@ -546,22 +563,16 @@ internal class Capture(
     override fun toString(): String = "Capture(index=$index, name=$name, sub=$sub)"
 }
 
-private fun nextChar(ch: Char): Char? {
-    if (ch == '\uD7FF') {
-        return '\uE000'
+private fun nextScalar(ch: Int): Int? =
+    when {
+        ch == 0xD7FF -> 0xE000
+        ch >= 0x10FFFF -> null
+        else -> ch + 1
     }
-    if (ch == '\uFFFF') {
-        return null
-    }
-    return (ch.code + 1).toChar()
-}
 
-private fun prevChar(ch: Char): Char? {
-    if (ch == '\uE000') {
-        return '\uD7FF'
+private fun prevScalar(ch: Int): Int? =
+    when {
+        ch == 0xE000 -> 0xD7FF
+        ch <= 0x0000 -> null
+        else -> ch - 1
     }
-    if (ch == '\u0000') {
-        return null
-    }
-    return (ch.code - 1).toChar()
-}

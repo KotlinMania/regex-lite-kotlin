@@ -253,30 +253,28 @@ class Regex internal constructor(
         val noExp = rep.noExpansion()
         val hayBytes = haystack.encodeToByteArray()
         if (noExp != null) {
-            val matches = findIter(haystack).toList()
+            val matches = if (limit > 0) findIter(haystack).take(limit).toList() else findIter(haystack).toList()
             if (matches.isEmpty()) return haystack
             val sb = StringBuilder(haystack.length)
             var lastMatch = 0
-            for ((i, m) in matches.withIndex()) {
+            for (m in matches) {
                 sb.append(hayBytes.decodeToString(lastMatch, m.start))
                 sb.append(noExp)
                 lastMatch = m.end
-                if (limit > 0 && i >= limit - 1) break
             }
             sb.append(hayBytes.decodeToString(lastMatch, hayBytes.size))
             return sb.toString()
         }
 
-        val capsList = capturesIter(haystack).toList()
+        val capsList = if (limit > 0) capturesIter(haystack).take(limit).toList() else capturesIter(haystack).toList()
         if (capsList.isEmpty()) return haystack
         val sb = StringBuilder(haystack.length)
         var lastMatch = 0
-        for ((i, cap) in capsList.withIndex()) {
+        for (cap in capsList) {
             val m0 = cap.get(0) ?: continue
             sb.append(hayBytes.decodeToString(lastMatch, m0.start))
             rep.replaceAppend(cap, sb)
             lastMatch = m0.end
-            if (limit > 0 && i >= limit - 1) break
         }
         sb.append(hayBytes.decodeToString(lastMatch, hayBytes.size))
         return sb.toString()

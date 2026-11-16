@@ -15,12 +15,12 @@ internal data class Config(
 internal sealed interface State {
     data class CharState(
         var target: StateID,
-        val ch: Char,
+        val ch: Int,
     ) : State
 
     data class Ranges(
         var target: StateID,
-        val ranges: List<Pair<Char, Char>>,
+        val ranges: List<Pair<Int, Int>>,
     ) : State
 
     data class Splits(
@@ -134,7 +134,7 @@ private class Compiler(
         return Result.success(ThompsonRef(start = id, end = id))
     }
 
-    private fun cChar(ch: Char): Result<ThompsonRef> {
+    private fun cChar(ch: Int): Result<ThompsonRef> {
         val id = add(State.CharState(target = 0u, ch = ch)).getOrElse { return Result.failure(it) }
         return Result.success(ThompsonRef(start = id, end = id))
     }
