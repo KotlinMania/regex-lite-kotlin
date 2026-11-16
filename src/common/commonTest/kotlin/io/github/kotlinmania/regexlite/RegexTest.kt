@@ -249,7 +249,13 @@ class RegexTest {
 
         val negMath = Regex("[^a]+").find("𝑎bc")
         assertNotNull(negMath)
-        assertEquals(0 until 4, negMath.range)
+        assertEquals(0 until 6, negMath.range)
+        assertEquals("𝑎bc", negMath.asStr())
+
+        val negMathStop = Regex("[^a]+").find("𝑎a")
+        assertNotNull(negMathStop)
+        assertEquals(0 until 4, negMathStop.range)
+        assertEquals("𝑎", negMathStop.asStr())
     }
 
     @Test
