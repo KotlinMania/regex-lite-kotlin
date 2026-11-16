@@ -16,15 +16,15 @@ For every Rust crate this repo owns (under `tmp/`), this file lists every **cros
 
 | package | module | inbound use sites | distinct caller crates | distinct caller repos | codex sites |
 |---|---|---:|---:|---:|---:|
-| `regex-lite` | `regex_lite` | 21 | 6 | 2 | 20 |
+| `regex-lite` | `regex_lite` | 23 | 7 | 3 | 20 |
 
 ## `regex-lite`
 
-### Inbound symbols (3 distinct, 21 total `use` sites)
+### Inbound symbols (3 distinct, 23 total `use` sites)
 
 Sorted by codex demand, then total demand. The first symbols are the priority queue for porting `regex-lite`.
 
-#### `regex_lite::Regex` — 19 site(s) (18 codex, 1 other, 6 caller crates)
+#### `regex_lite::Regex` — 21 site(s) (18 codex, 3 other, 7 caller crates)
 
 - ✅ `codex-kotlin/codex-core` `src/context_manager/history_tests.rs:31` — `use regex_lite::Regex`
 - ✅ `codex-kotlin/codex-core` `tests/common/context_snapshot.rs:1` — `use regex_lite::Regex`
@@ -38,7 +38,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-core` `tests/suite/tools.rs:38` — `use regex_lite::Regex`
 - ✅ `codex-kotlin/codex-core` `tests/suite/unified_exec.rs:40` — `use regex_lite::Regex`
 - ✅ `codex-kotlin/codex-execpolicy-legacy` `src/policy.rs:3` — `use regex_lite::Regex`
-- _… and 7 more site(s)._
+- _… and 9 more site(s)._
 
 #### `regex_lite::Error` — 1 site(s) (1 codex, 0 other, 1 caller crates)
 

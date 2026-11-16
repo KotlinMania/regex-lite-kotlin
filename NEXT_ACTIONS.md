@@ -5,10 +5,10 @@ Based on AST analysis, here are the concrete next steps.
 ## Summary
 
 - **Files Present:** 9/11 (81.8%)
-- **Function parity:** 197/270 matched (target 319) — 73.0%
-- **Class/type parity:** 41/52 matched (target 59) — 78.8%
-- **Combined symbol parity:** 238/322 matched (target 378) — 73.9%
-- **Average inline-code cosine:** 0.11 (function body across 9 matched files)
+- **Function parity:** 173/270 matched (target 221) — 64.1%
+- **Class/type parity:** 41/52 matched (target 55) — 78.8%
+- **Combined symbol parity:** 214/322 matched (target 276) — 66.5%
+- **Average inline-code cosine:** 0.09 (function body across 9 matched files)
 - **Average documentation cosine:** 0.52 (doc text across 9 matched files)
 - **Cheat-zeroed Files:** 0
 - **Critical Issues:** 9 files with <0.60 function similarity
@@ -31,13 +31,13 @@ Every matched file is listed below with function and type symbol parity.
 
 ### 1. string
 
-- **Target:** `regexlite.Regex`
+- **Target:** `Regex`
 - **Similarity:** 0.13
 - **Dependents:** 1
 - **Priority Score:** 1351508.8
-- **Functions:** 64/94 matched (target 103)
+- **Functions:** 64/94 matched (target 84)
 - **Missing functions:** `clone`, `fmt`, `fmt`, `from_str`, `try_from`, `try_from`, `start`, `end`, `range`, `fmt`, `from`, `fmt`, `fmt`, `fmt`, `fmt`, `index`, `index`, `size_hint`, `size_hint`, `size_hint`, `no_expansion`, `replace_append`, `no_expansion`, `replace_append`, `replace_append`, `no_expansion`, `replace_append`, `no_expansion`, `no_expansion`, `new`
-- **Types:** 17/21 matched (target 20)
+- **Types:** 17/21 matched (target 19)
 - **Missing types:** `Err`, `Error`, `Output`, `Item`
 
 ### 2. pikevm
@@ -51,7 +51,19 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 8/10 matched
 - **Missing types:** `Item`, `SparseSetIter`
 
-### 3. nfa
+### 3. hir.parse
+
+- **Target:** `hir.Parser`
+- **Similarity:** 0.15
+- **Dependents:** 0
+- **Priority Score:** 317708.5
+- **Functions:** 45/76 matched (target 45)
+- **Missing functions:** `new`, `pattern`, `flags`, `p`, `perr`, `class`, `singles`, `posix`, `cap`, `named_cap`, `ok_literal`, `ok_meta_escapes`, `ok_special_escapes`, `ok_hex`, `ok_perl`, `ok_flags_and_primitives`, `ok_alternate`, `ok_flag_group`, `ok_flag_directive`, `ok_uncounted_repetition`, `ok_counted_repetition`, `ok_group_unnamed`, `ok_group_named`, `ok_class`, `ok_verbatim`, `ok_comments`, `err_standard`, `err_verbatim`, `regression_454_nest_too_big`, `regression_455_trailing_dash_ignore_whitespace`, `regression_capture_indices`
+- **Types:** 1/1 matched
+- **Missing types:** _none_
+- **Tests:** 0/28 matched
+
+### 4. nfa
 
 - **Target:** `nfa.Nfa`
 - **Similarity:** 0.13
@@ -62,21 +74,9 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 6/9 matched (target 13)
 - **Missing types:** `CaptureNames`, `Item`, `CaptureNameMap`
 
-### 4. hir.parse
-
-- **Target:** `hir.Parser`
-- **Similarity:** 0.25
-- **Dependents:** 0
-- **Priority Score:** 107707.5
-- **Functions:** 66/76 matched (target 74)
-- **Missing functions:** `new`, `pattern`, `flags`, `p`, `perr`, `class`, `singles`, `posix`, `cap`, `named_cap`
-- **Types:** 1/1 matched (target 2)
-- **Missing types:** _none_
-- **Tests:** 21/28 matched
-
 ### 5. pool
 
-- **Target:** `regexlite.Pool`
+- **Target:** `Pool`
 - **Similarity:** 0.03
 - **Dependents:** 0
 - **Priority Score:** 61409.7
@@ -85,21 +85,33 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 5/6 matched
 - **Missing types:** `Target`
 
-### 6. interpolate
+### 6. utf8
 
-- **Target:** `regexlite.Interpolate`
+- **Target:** `Utf8`
+- **Similarity:** 0.11
+- **Dependents:** 0
+- **Priority Score:** 40908.9
+- **Functions:** 5/9 matched (target 5)
+- **Missing functions:** `decode_valid`, `d`, `decode_invalid`, `decode_lossily`
+- **Types:** 0/0 matched
+- **Missing types:** _none_
+- **Tests:** 0/4 matched
+
+### 7. interpolate
+
+- **Target:** `Interpolate`
 - **Similarity:** 0.06
 - **Dependents:** 0
 - **Priority Score:** 30909.4
-- **Functions:** 4/7 matched (target 53)
+- **Functions:** 4/7 matched (target 8)
 - **Missing functions:** `from`, `from`, `interpolate_string`
-- **Types:** 2/2 matched (target 5)
+- **Types:** 2/2 matched (target 4)
 - **Missing types:** _none_
 - **Tests:** 0/1 matched
 
-### 7. int
+### 8. int
 
-- **Target:** `regexlite.Int`
+- **Target:** `Int`
 - **Similarity:** 0.02
 - **Dependents:** 0
 - **Priority Score:** 20609.8
@@ -108,9 +120,9 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/2 matched (target 1)
 - **Missing types:** `U32`
 
-### 8. error
+### 9. error
 
-- **Target:** `regexlite.Error`
+- **Target:** `Error`
 - **Similarity:** 0.00
 - **Dependents:** 0
 - **Priority Score:** 20310.0
@@ -118,18 +130,6 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing functions:** `new`, `fmt`
 - **Types:** 1/1 matched
 - **Missing types:** _none_
-
-### 9. utf8
-
-- **Target:** `regexlite.Utf8`
-- **Similarity:** 0.20
-- **Dependents:** 0
-- **Priority Score:** 10908.0
-- **Functions:** 8/9 matched (target 10)
-- **Missing functions:** `d`
-- **Types:** 0/0 matched (target 1)
-- **Missing types:** _none_
-- **Tests:** 3/4 matched
 
 ## Success Criteria
 
