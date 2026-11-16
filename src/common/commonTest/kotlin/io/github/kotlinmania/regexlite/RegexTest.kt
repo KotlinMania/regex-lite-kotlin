@@ -272,7 +272,8 @@ class RegexTest {
             listOf(0 to 0, 4 to 4),
             Regex("").findIter("💩").map { it.start to it.end }.toList(),
         )
-        assertFalse(RegexBuilder("s").caseInsensitive(true).build().getOrThrow().isMatch("ſ"))
+        val sCaseInsensitive = RegexBuilder("s").caseInsensitive(true).build()
+        assertFalse(sCaseInsensitive.getOrThrow().isMatch("ſ"))
 
         val unicodeErr = Regex.new("""\p{L}""").exceptionOrNull()
         assertNotNull(unicodeErr)
