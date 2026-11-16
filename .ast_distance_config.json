@@ -6,7 +6,7 @@
     "lang": "rust"
   },
   "target": {
-    "path": "src/commonMain/kotlin/io/github/kotlinmania/regexlite",
+    "path": "src/common/commonMain/kotlin/io/github/kotlinmania/regexlite",
     "lang": "kotlin"
   },
   "checks": {
